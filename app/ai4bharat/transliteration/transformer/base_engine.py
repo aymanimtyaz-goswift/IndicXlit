@@ -5,6 +5,7 @@ import ujson
 from pydload import dload
 import zipfile
 from abc import ABC, abstractmethod, abstractproperty
+from concurrent.futures import ProcessPoolExecutor
 from indicnlp.normalize.indic_normalize import IndicNormalizerFactory
 from urduhack import normalize as shahmukhi_normalize
 
@@ -389,7 +390,17 @@ class BaseEngineTransformer(ABC):
             return text
 
         out_str = text
-        for match in matches:
-            result = self.batch_transliterate_words([match], src_lang, tgt_lang)[0][0]
-            out_str = re.sub(match, result, out_str, 1)
+
+        def transliterate_wrapper(word):
+            result = self.batch_transliterate_words([word], src_lang, tgt_lang)[0][0]
+            return word, result
+
+        with ProcessPoolExecutor(max_workers=8) as executor:
+            results = executor.map(transliterate_wrapper, matches)
+        for inp, transliterated in results:
+            out_str = re.sub(inp, transliterated, out_str, 1)
+
+        # for match in matches:
+        #     result = self.batch_transliterate_words([match], src_lang, tgt_lang)[0][0]
+        #     out_str = re.sub(match, result, out_str, 1)
         return out_str
