@@ -23,6 +23,18 @@ LANG_LIST_FILE = '../lang_list.txt'
 
 normalizer_factory = IndicNormalizerFactory()
 
+
+def transliterate_wrapper(
+    inp_word
+):
+    result = inp_word["transformer"].batch_transliterate_words(
+        [inp_word["word"]],
+        inp_word["src_lang"],
+        inp_word["tgt_lang"]
+    )[0][0]
+    return inp_word["word"], result
+
+
 class BaseEngineTransformer(ABC):
 
     @abstractproperty
@@ -386,17 +398,24 @@ class BaseEngineTransformer(ABC):
 
         matches = LANG_WORD_REGEXES[src_lang].findall(text)
 
+        inp_matches = list()
+        for match in matches:
+            inp.append(
+                {
+                    "word": match,
+                    "src_lang": src_lang,
+                    "tgt_lang": tgt_lang,
+                    "transformer": self
+                }
+            )
+
         if not matches:
             return text
 
         out_str = text
 
-        def transliterate_wrapper(word):
-            result = self.batch_transliterate_words([word], src_lang, tgt_lang)[0][0]
-            return word, result
-
         with ProcessPoolExecutor(max_workers=8) as executor:
-            results = executor.map(transliterate_wrapper, matches)
+            results = executor.map(transliterate_wrapper, inp_matches)
         for inp, transliterated in results:
             out_str = re.sub(inp, transliterated, out_str, 1)
 
