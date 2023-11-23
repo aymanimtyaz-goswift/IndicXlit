@@ -400,7 +400,7 @@ class BaseEngineTransformer(ABC):
 
         inp_matches = list()
         for match in matches:
-            inp.append(
+            inp_matches.append(
                 {
                     "word": match,
                     "src_lang": src_lang,
