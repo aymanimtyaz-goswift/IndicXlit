@@ -362,6 +362,21 @@ class BaseEngineTransformer(ABC):
         
         return [transliteration_list]
 
+    def preprocess_nonenglish_sentence(
+        self,
+        sentence: str|None,
+    ) -> str:
+        if sentence:
+            sentence = sentence.lower().strip().translate(INDIC_TO_LATIN_PUNCT_TRANSLATOR).translate(INDIC_TO_STANDARD_NUMERALS_TRANSLATOR)
+        return sentence
+
+    def get_language_specific_matches(
+        self,
+        sentence: str,
+        src_lang: str
+    ) -> list[str]:
+        return LANG_WORD_REGEXES[src_lang].findall(sentence)
+
     def _transliterate_sentence(self, text, src_lang, tgt_lang, nativize_punctuations=True, nativize_numerals=False):
         # TODO: Minimize code redundancy with `_transliterate_word()`
 
