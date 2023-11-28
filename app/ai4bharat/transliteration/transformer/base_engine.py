@@ -1,3 +1,4 @@
+import typing
 import os
 import re
 import tqdm
@@ -364,7 +365,7 @@ class BaseEngineTransformer(ABC):
 
     def preprocess_nonenglish_sentence(
         self,
-        sentence: str|None,
+        sentence: typing.Union[str, None],
     ) -> str:
         if sentence:
             sentence = sentence.lower().strip().translate(INDIC_TO_LATIN_PUNCT_TRANSLATOR).translate(INDIC_TO_STANDARD_NUMERALS_TRANSLATOR)
@@ -374,7 +375,7 @@ class BaseEngineTransformer(ABC):
         self,
         sentence: str,
         src_lang: str
-    ) -> list[str]:
+    ) -> typing.List[str]:
         return LANG_WORD_REGEXES[src_lang].findall(sentence)
 
     def _transliterate_sentence(self, text, src_lang, tgt_lang, nativize_punctuations=True, nativize_numerals=False):
@@ -408,3 +409,6 @@ class BaseEngineTransformer(ABC):
             result = self.batch_transliterate_words([match], src_lang, tgt_lang)[0][0]
             out_str = re.sub(match, result, out_str, 1)
         return out_str
+
+    def _transliterate_word_override(self, word: str, src_lang: str):
+        return word, self.batch_transliterate_words([word], src_lang, "en")[0][0]
